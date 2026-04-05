@@ -2,10 +2,10 @@
 const map = L.map('map').setView([59.4841, 19.4568], 9);
 
 // Old map / treasure map style
-L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
-  attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
-  maxZoom: 16
+  maxZoom: 19
 }).addTo(map);
 
 // Lock map (board game feel)
