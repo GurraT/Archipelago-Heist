@@ -123,6 +123,16 @@ police.forEach(p=>{
   }).addTo(map);
 });
 
+const thiefIcon = L.icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/854/854894.png",
+  iconSize: [32,32]
+});
+
+const policeIcon = L.icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/149/149071.png",
+  iconSize: [32,32]
+});
+
 // ================= DICE BUTTON =================
 rollBtn.addEventListener('click', () => {
   if(turn !== 'thief') return;
