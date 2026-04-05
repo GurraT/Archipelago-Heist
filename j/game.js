@@ -1,7 +1,9 @@
 // ================= MAP SETUP =================
 const map = L.map('map').setView([59.4841, 19.4568], 9);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  attribution:'&copy; OpenStreetMap contributors'
+L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg', {
+  attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>',
+  subdomains: 'abcd',
+  maxZoom: 16
 }).addTo(map);
 
 // Lock map (board game feel)
@@ -66,8 +68,11 @@ map.fitBounds(L.latLngBounds(islandCoords).pad(0.1));
 // ================= DRAW CONNECTIONS =================
 islands.forEach(i=>{ 
   i.connections.forEach(cid=>{
-    const target=islands[cid];
-    L.polyline([i.coords,target.coords],{color:'#888',weight:2}).addTo(map);
+ L.polyline([i.coords, target.coords], {
+  color:'#6B4226', // old ink brown
+  weight: 2,
+  opacity: 0.6
+}).addTo(map);
   });
 });
 
