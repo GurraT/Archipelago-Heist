@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Thief & Police Board Game</title>
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <title>Treasure Island Game</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
   <div id="map"></div>
 
   <div id="ui">
+    <div>Turn: <span id="turnInfo">thief</span></div>
+    <div>Treasures: <span id="treasureCount">0</span></div>
     <button id="rollDice">Roll Dice</button>
-    <span id="diceResult">-</span>
-    <span id="turnInfo">Turn</span>
-    <span id="treasureCount">0</span>
+    <div>Dice: <span id="diceResult">-</span></div>
     <div id="message"></div>
   </div>
 
