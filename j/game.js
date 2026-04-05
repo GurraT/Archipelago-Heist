@@ -160,20 +160,35 @@ function highlightMoves(valid){
   valid.forEach(i=>i.marker.setStyle({fillColor:'#4CAF50',radius:12}));
 }
 
-function animateMove(marker,start,end,duration=600,callback){
-  let startTime=null;
-  function animate(timestamp){
-    if(!startTime) startTime=timestamp;
-    const progress=timestamp-startTime;
-    const t=Math.min(progress/duration,1);
-    const ease=t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
-    const lat=start[0]+(end[0]-start[0])*ease;
-    const lng=start[1]+(end[1]-start[1])*ease;
-    marker.setLatLng([lat,lng]);
-    if(t<1) requestAnimationFrame(animate);
-    else if(callback) callback();
+function animateMove(marker, start, end, duration = 600, callback) {
+  const startLat = start[0], startLng = start[1];
+  const deltaLat = end[0] - start[0];
+  const deltaLng = end[1] - start[1];
+  const startTime = performance.now();
+  const angle = getRotationAngle(start,end);
+marker.getElement().style.transform = `rotate(${angle}deg)`;
+
+  function animate(time) {
+    const elapsed = time - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const ease = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+    const lat = startLat + deltaLat * ease;
+    const lng = startLng + deltaLng * ease;
+
+    marker.setLatLng([lat, lng]);
+
+    if (t < 1) {
+      requestAnimationFrame(animate);
+    } else if (callback) {
+      callback();
+    }
   }
   requestAnimationFrame(animate);
+}
+
+function getRotationAngle(start, end){
+  return Math.atan2(end[1]-start[1], end[0]-start[0]) * (180/Math.PI);
 }
 
 function movePlayer(player,island){
