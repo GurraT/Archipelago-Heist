@@ -294,9 +294,8 @@ function nextTurn(){
   turn = (turn === 'thief') ? 'police' : 'thief';
   turnInfo.innerHTML = `${turn}'s turn`;
 
-  if(turn === 'thief'){
-    highlightMoves(getReachableIslands(thief.island, 2));
-  }
+  diceRolled = false;
+  diceResultDiv.innerText = "-";
 }
 
 function stopGame(){
