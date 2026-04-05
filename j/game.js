@@ -89,10 +89,11 @@ police[1].island = islands[49];  // opposite corner
 islands.forEach(island => {
   island.connections.forEach(connId => {
     const target = islands.find(i => i.id === connId);
+
     L.polyline([island.coords, target.coords], {
-      color: 'gray',
-      weight: 2,
-      dashArray: '5,5'
+      color: '#888',
+      weight: 3,
+      opacity: 0.7
     }).addTo(map);
   });
 });
@@ -120,21 +121,35 @@ let police = [
 let treasures = [islands[1], islands[2], islands[3]];
 const treasureMarkers = [];
 
-treasures.forEach((t, i) => {
-  const marker = L.marker(t.coords, {
-    icon: L.icon({
-      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9b/Gold_coin_icon.png',
-      iconSize: [24, 24]
-    })
-  }).addTo(map).bindPopup("Treasure");
-  treasureMarkers.push(marker);
+islands.forEach(island => {
+  const marker = L.circleMarker(island.coords, {
+    radius: 8,
+    color: '#333',
+    weight: 2,
+    fillColor: '#ffffff',
+    fillOpacity: 1
+  }).addTo(map);
+
+  marker.bindPopup(island.name);
+
+  island.marker = marker; // store reference
+
+  marker.on('click', () => handleIslandClick(island));
 });
 
 // ================= MARKERS =================
-thief.marker = L.circleMarker(thief.island.coords, { color: 'red', radius: 10 }).addTo(map);
+thief.marker = L.circleMarker(thief.island.coords, {
+  color: 'red',
+  fillColor: 'red',
+  radius: 10
+}).addTo(map);
 
-police.forEach(p => {
-  p.marker = L.circleMarker(p.island.coords, { color: 'blue', radius: 10 }).addTo(map);
+police.forEach(p=>{
+  p.marker = L.circleMarker(p.island.coords, {
+    color: 'blue',
+    fillColor: 'blue',
+    radius: 10
+  }).addTo(map);
 });
 
 // ================= DICE =================
@@ -238,6 +253,12 @@ function checkCatch(){
 function nextTurn(){
   turn = (turn === 'thief') ? 'police' : 'thief';
   turnInfo.innerHTML = `${turn}'s turn`;
+
+  if(turn === 'thief'){
+    const dice = 2; // preview range (or last roll)
+    const validMoves = getReachableIslands(thief.island, dice);
+    highlightMoves(validMoves);
+  }
 }
 
 function stopGame(){
@@ -245,6 +266,34 @@ function stopGame(){
 }
 
 // ================= ISLAND CLICK =================
+function handleIslandClick(island){
+  if(turn !== 'thief') return;
+
+  if(thief.skipTurn){
+    message.innerHTML = "Thief skips turn!";
+    thief.skipTurn = false;
+    nextTurn();
+    return;
+  }
+
+  maybeDrawEvent();
+
+  let dice = rollDice();
+  if(thief.doubleMove){ dice *= 2; thief.doubleMove = false; }
+
+  const validMoves = getReachableIslands(thief.island, dice);
+
+  highlightMoves(validMoves); // 🔥 visual feedback
+
+  if(!validMoves.includes(island)){
+    message.innerHTML = `Invalid move (${dice} steps)`;
+    return;
+  }
+
+  movePlayer(thief, island);
+  message.innerHTML = `Moved to ${island.name} (dice: ${dice})`;
+}
+
 islands.forEach(island => {
   const marker = L.marker(island.coords).addTo(map).bindPopup(island.name);
 
