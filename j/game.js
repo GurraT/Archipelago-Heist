@@ -23,6 +23,39 @@ const cardType = document.getElementById('cardType');
 const cardEffect = document.getElementById('cardEffect');
 const cardIcon = document.getElementById('cardIcon');
 
+
+//===================DICE EVENT=======================
+
+rollBtn.addEventListener('click', () => {
+  if(turn !== 'thief') return;
+
+  diceRolled = false;
+
+  let rolls = 10;
+  let interval = setInterval(() => {
+    diceResultDiv.innerText = Math.floor(Math.random()*6)+1;
+    rolls--;
+
+    if(rolls <= 0){
+      clearInterval(interval);
+
+      currentDice = Math.floor(Math.random()*3)+1; // keep your 1–3 system
+      diceResultDiv.innerText = currentDice;
+
+      diceRolled = true;
+
+      // Highlight moves AFTER roll
+      let moves = currentDice;
+
+      if(thief.doubleMove){
+        moves *= 2;
+      }
+
+      highlightMoves(getReachableIslands(thief.island, moves));
+    }
+  }, 80);
+});
+
 // ================= ISLANDS =================
 const islands = [
   { id: 0, name: "Island 1", coords: [59.50, 18.00], connections: [1,10] },
@@ -274,21 +307,28 @@ function stopGame(){
 function handleIslandClick(island){
   if(turn !== 'thief') return;
 
+  if(!diceRolled){
+    message.innerHTML = "Roll the dice first!";
+    return;
+  }
+
   if(thief.skipTurn){
     thief.skipTurn = false;
+    diceRolled = false;
     nextTurn();
     return;
   }
 
   maybeDrawEvent();
 
-  let dice = rollDice();
+  let moves = currentDice;
+
   if(thief.doubleMove){
-    dice *= 2;
+    moves *= 2;
     thief.doubleMove = false;
   }
 
-  const valid = getReachableIslands(thief.island, dice);
+  const valid = getReachableIslands(thief.island, moves);
 
   if(!valid.includes(island)){
     message.innerHTML = "Invalid move";
@@ -296,7 +336,9 @@ function handleIslandClick(island){
   }
 
   movePlayer(thief, island);
-  message.innerHTML = `Moved (${dice})`;
+
+  message.innerHTML = `Moved ${moves} steps`;
+  diceRolled = false;
 }
 
 // ================= POLICE AI =================
