@@ -4,6 +4,12 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
+map.dragging.disable();
+map.scrollWheelZoom.disable();
+map.doubleClickZoom.disable();
+map.boxZoom.disable();
+map.keyboard.disable();
+
 // Islands
 const islands = [
   { id: 0, name: "Vaxholm", coords: [59.4007, 18.2876], connections: [1,2] },
