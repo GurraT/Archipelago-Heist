@@ -1,0 +1,16 @@
+.event-card {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 220px;
+  padding: 10px;
+  background: #fff8c6;
+  border: 2px solid #333;
+  border-radius: 8px;
+  box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+  z-index: 1000;
+  font-family: sans-serif;
+  text-align: center;
+}
+.event-card h3 { margin: 0; font-size: 18px; color: #b22222; }
+.event-card p { margin: 5px 0; font-size: 14px; }
