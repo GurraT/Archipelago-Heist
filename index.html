@@ -2,26 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Treasure Island Game</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/style.css" />
+  <title>Treasure Hunt Game</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div id="map"></div>
-
   <div id="ui">
-    <div>Turn: <span id="turnInfo">thief</span></div>
-    <div>Treasures: <span id="treasureCount">0</span></div>
-    <button id="rollDice">Roll Dice</button>
-    <div>Dice: <span id="diceResult">-</span></div>
     <div id="message"></div>
+    <div id="turnInfo"></div>
+    <div id="treasureCount">0</div>
+    <button id="rollDice">Roll Dice</button>
+    <div id="diceResult">-</div>
+    <div id="eventCard">
+      <div id="cardName"></div>
+      <div id="cardType"></div>
+      <div id="cardEffect"></div>
+    </div>
   </div>
-
-  <div id="eventCard">
-    <div id="cardName"></div>
-    <div id="cardType"></div>
-    <div id="cardEffect"></div>
-  </div>
+  <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="j/game.js"></script>
