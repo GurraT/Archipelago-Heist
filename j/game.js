@@ -154,3 +154,61 @@ function movePolice(){
 const policeInterval = setInterval(()=>{
   if(turn==='police') movePolice();
 },3000);
+
+// Event deck
+const events = [
+  { name: "Storm", effect: () => { message.innerHTML="Storm! Thief loses next turn."; thief.skipTurn = true; } },
+  { name: "Secret Passage", effect: () => { message.innerHTML="Secret passage! Thief moves double this turn."; thief.doubleMove = true; } },
+  { name: "Treasure Bonus", effect: () => { 
+      if(treasures.length>0){
+        const t = treasures[0]; 
+        treasures.splice(0,1); 
+        map.removeLayer(treasureMarkers[0]); 
+        treasureMarkers.splice(0,1);
+        thief.treasures += 1;
+        treasureCount.innerHTML = `Treasures collected: ${thief.treasures}`;
+        message.innerHTML = "Treasure Bonus! Thief collected an extra treasure!";
+      } 
+    } 
+  },
+  { name: "Police Alert", effect: () => {
+      message.innerHTML="Police Alert! Thief revealed for 5 seconds.";
+      thief.marker.setStyle({ opacity:1 });
+      setTimeout(()=>updateStealth(),5000);
+    } 
+  }
+];
+
+// Draw a random event (50% chance at start of Thief turn)
+function maybeDrawEvent(){
+  if(Math.random()<0.5){
+    const event = events[Math.floor(Math.random()*events.length)];
+    event.effect();
+  }
+}
+
+// Override Thief map click handler for events and double dice
+map.on('click', e=>{
+  if(turn!=='thief') return;
+  if(thief.skipTurn){ message.innerHTML="Thief loses this turn due to Storm!"; thief.skipTurn=false; nextTurn(); return; }
+
+  maybeDrawEvent(); // draw event before move
+
+  let dice = rollDice();
+  if(thief.doubleMove){ dice *= 2; thief.doubleMove=false; }
+
+  let nearest = islands[0];
+  let minDist = map.distance(e.latlng, L.latLng(nearest.coords));
+  islands.forEach(i=>{
+    const d = map.distance(e.latlng, L.latLng(i.coords));
+    if(d<minDist) nearest=i;
+  });
+
+  const distToIsland = map.distance(L.latLng(thief.island.coords), L.latLng(nearest.coords));
+  if(distToIsland <= dice*30000){
+    movePlayer(thief, nearest);
+    message.innerHTML += ` Thief rolled a ${dice} and moved to ${nearest.name}`;
+  } else {
+    message.innerHTML += ` Thief rolled a ${dice}, but ${nearest.name} is too far.`;
+  }
+});
