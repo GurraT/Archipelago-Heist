@@ -10,6 +10,8 @@ map.doubleClickZoom.disable();
 map.boxZoom.disable();
 map.keyboard.disable();
 
+const cardIcon = document.getElementById('cardIcon');
+
 // Islands
 const islands = [
   { id: 0, name: "Vaxholm", coords: [59.4007, 18.2876], connections: [1,2] },
@@ -27,14 +29,34 @@ const islands = [
 ];
 
 islands.forEach(island => {
-  island.connections.forEach(connId => {
-    const target = islands.find(i => i.id === connId);
+  const marker = L.marker(island.coords).addTo(map)
+    .bindPopup(island.name);
 
-    L.polyline([island.coords, target.coords], {
-      color: 'gray',
-      weight: 2,
-      dashArray: '5,5'
-    }).addTo(map);
+  marker.on('click', () => {
+    if(turn !== 'thief') return;
+
+    if(thief.skipTurn){
+      message.innerHTML = "Thief loses turn due to Storm.";
+      thief.skipTurn = false;
+      nextTurn();
+      return;
+    }
+
+    maybeDrawEvent();
+
+    let dice = rollDice();
+    if(thief.doubleMove){ dice *= 2; thief.doubleMove = false; }
+    if(thief.reduceMove){ dice = Math.max(1, dice - thief.reduceMove); thief.reduceMove = 0; }
+
+    const validMoves = getReachableIslands(thief.island, dice);
+
+    if(!validMoves.includes(island)){
+      message.innerHTML = `Invalid move. You can move ${dice} steps.`;
+      return;
+    }
+
+    movePlayer(thief, island);
+    message.innerHTML = `Thief rolled ${dice} and moved to ${island.name}`;
   });
 });
 
@@ -57,12 +79,6 @@ let turn = 'thief';
 
 // Dice roll
 function rollDice(){ return Math.floor(Math.random()*3)+1; }
-
-// Add island markers
-islands.forEach(i=>{
-  L.marker(i.coords).addTo(map)
-    .bindPopup(`<strong>${i.name}</strong>`);
-});
 
 // Add treasure markers
 treasures.forEach((t,i)=>{
@@ -128,10 +144,10 @@ let policeSkipNext=false;
 let policeExtraMove=0;
 
 function maybeDrawEvent(){
-  if(Math.random()<0.5){ // 50% chance
+  if(Math.random() < 0.5){
     const event = events[Math.floor(Math.random()*events.length)];
-    showEventCard(event);  // display visually
-    event.effect();        // apply effect
+    showEventCard(event);
+    event.effect();
   }
 }
 
@@ -189,14 +205,6 @@ function updateStealth(){
   });
   if(!thief.skipReveal) thief.marker.setStyle({opacity: visible?1:0});
   thief.skipReveal=false;
-}
-
-// Draw random event (50% chance per Thief turn)
-function maybeDrawEvent(){
-  if(Math.random()<0.5){
-    const event = events[Math.floor(Math.random()*events.length)];
-    event.effect();
-  }
 }
 
 // Move player
@@ -287,21 +295,6 @@ function getReachableIslands(start, steps){
   return Array.from(visited);
 }
 // Thief movement click handler
-
-  maybeDrawEvent();
-
-const dice = rollDice();
-const validMoves = getReachableIslands(thief.island, dice);
-
-  let dice=rollDice();
-  if(thief.doubleMove){ dice*=2; thief.doubleMove=false; }
-  if(thief.reduceMove){ dice=Math.max(1,dice-thief.reduceMove); thief.reduceMove=0; }
-
-  let nearest=islands[0]; let minDist=map.distance(e.latlng,L.latLng(nearest.coords));
-  islands.forEach(i=>{
-    const d = map.distance(e.latlng,L.latLng(i.coords));
-    if(d<minDist){ nearest=i; minDist=d; }
-  });
 
   const distToIsland = map.distance(L.latLng(thief.island.coords),L.latLng(nearest.coords));
   if(distToIsland <= dice*30000){ movePlayer(thief,nearest); message.innerHTML+=` Thief rolled ${dice} and moved to ${nearest.name}`; }
