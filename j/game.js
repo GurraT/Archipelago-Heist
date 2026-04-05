@@ -5,7 +5,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
 
-// Disable map movement (board game style)
+// Disable map movement
 map.dragging.disable();
 map.scrollWheelZoom.disable();
 map.doubleClickZoom.disable();
@@ -81,11 +81,28 @@ const islands = [
   { id: 49, name: "Island 50", coords: [59.30, 18.90], connections: [39,48] }
 ];
 
-thief.island = islands[22];   // center
-police[0].island = islands[0];   // corner
-police[1].island = islands[49];  // opposite corner
+// ================= PLAYERS =================
+let turn = 'thief';
 
-// Draw connections (board paths)
+let thief = {
+  name: "Thief",
+  island: islands[22],
+  treasures: 0,
+  marker: null,
+  skipTurn: false,
+  doubleMove: false
+};
+
+let police = [
+  { name: "Police1", island: islands[0], marker: null },
+  { name: "Police2", island: islands[49], marker: null }
+];
+
+// ================= TREASURES =================
+let treasures = [islands[5], islands[24], islands[44]];
+const treasureMarkers = [];
+
+// ================= DRAW CONNECTIONS =================
 islands.forEach(island => {
   island.connections.forEach(connId => {
     const target = islands.find(i => i.id === connId);
@@ -98,53 +115,42 @@ islands.forEach(island => {
   });
 });
 
-// ================= PLAYERS =================
-let turn = 'thief';
-
-let thief = {
-  name: "Thief",
-  island: islands[0],
-  treasures: 0,
-  marker: null,
-  skipTurn: false,
-  doubleMove: false,
-  reduceMove: 0,
-  skipReveal: false
-};
-
-let police = [
-  { name: "Police1", island: islands[2], marker: null },
-  { name: "Police2", island: islands[4], marker: null }
-];
-
-// ================= TREASURES =================
-let treasures = [islands[1], islands[2], islands[3]];
-const treasureMarkers = [];
-
+// ================= DRAW ISLANDS =================
 islands.forEach(island => {
   const marker = L.circleMarker(island.coords, {
     radius: 8,
     color: '#333',
-    weight: 2,
-    fillColor: '#ffffff',
+    fillColor: '#fff',
     fillOpacity: 1
   }).addTo(map);
 
-  marker.bindPopup(island.name);
+  island.marker = marker;
 
-  island.marker = marker; // store reference
+  marker.bindPopup(island.name);
 
   marker.on('click', () => handleIslandClick(island));
 });
 
-// ================= MARKERS =================
+// ================= TREASURE MARKERS =================
+treasures.forEach((t, i) => {
+  const marker = L.marker(t.coords, {
+    icon: L.icon({
+      iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/9/9b/Gold_coin_icon.png',
+      iconSize: [24, 24]
+    })
+  }).addTo(map);
+
+  treasureMarkers.push(marker);
+});
+
+// ================= PLAYER MARKERS =================
 thief.marker = L.circleMarker(thief.island.coords, {
   color: 'red',
   fillColor: 'red',
   radius: 10
 }).addTo(map);
 
-police.forEach(p=>{
+police.forEach(p => {
   p.marker = L.circleMarker(p.island.coords, {
     color: 'blue',
     fillColor: 'blue',
@@ -158,18 +164,12 @@ function rollDice() {
 }
 
 // ================= EVENTS =================
-const cardIcons = {
-  "Thief": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Red_circle.png",
-  "Police": "https://upload.wikimedia.org/wikipedia/commons/2/29/Blue_circle.png",
-  "Both": "https://upload.wikimedia.org/wikipedia/commons/6/60/Yellow_circle.png"
-};
+let policeSkipNext = false;
 
 const events = [
-  { name: "Storm", type:"Police", effect:()=>{ thief.skipTurn=true; message.innerHTML="Storm! Thief skips turn."; }},
-  { name: "Secret Passage", type:"Thief", effect:()=>{ thief.doubleMove=true; }},
-  { name: "Police Alert", type:"Police", effect:()=>{ thief.marker.setStyle({opacity:1}); }},
-  { name: "Foggy Night", type:"Thief", effect:()=>{ policeSkipNext=true; }},
-  { name: "Reinforcements", type:"Police", effect:()=>{ policeExtraMove=1; }},
+  { name: "Storm", effect: () => { thief.skipTurn = true; message.innerHTML = "Storm! Skip turn."; }},
+  { name: "Boost", effect: () => { thief.doubleMove = true; }},
+  { name: "Fog", effect: () => { policeSkipNext = true; }}
 ];
 
 function maybeDrawEvent(){
@@ -182,14 +182,11 @@ function maybeDrawEvent(){
 
 function showEventCard(event){
   cardName.innerText = event.name;
-  cardType.innerText = `Type: ${event.type}`;
+  cardType.innerText = "Event";
   cardEffect.innerText = event.name;
 
-  eventCardDiv.className = `event-card ${event.type.toLowerCase()}`;
-  cardIcon.src = cardIcons[event.type];
-
   eventCardDiv.style.display = 'block';
-  setTimeout(()=>{ eventCardDiv.style.display='none'; },3000);
+  setTimeout(()=> eventCardDiv.style.display='none', 2000);
 }
 
 // ================= MOVEMENT =================
@@ -199,9 +196,9 @@ function getReachableIslands(start, steps){
 
   for(let i=0;i<steps;i++){
     let next = [];
-    frontier.forEach(island=>{
-      island.connections.forEach(id=>{
-        const target = islands.find(i=>i.id===id);
+    frontier.forEach(i=>{
+      i.connections.forEach(id=>{
+        const target = islands.find(x=>x.id===id);
         if(!visited.has(target)){
           visited.add(target);
           next.push(target);
@@ -213,9 +210,19 @@ function getReachableIslands(start, steps){
   return Array.from(visited);
 }
 
-function movePlayer(player,targetIsland){
-  player.island = targetIsland;
-  player.marker.setLatLng(targetIsland.coords);
+function highlightMoves(valid){
+  islands.forEach(i=>{
+    i.marker.setStyle({ fillColor:'#fff', radius:8 });
+  });
+
+  valid.forEach(i=>{
+    i.marker.setStyle({ fillColor:'#4CAF50', radius:12 });
+  });
+}
+
+function movePlayer(player, island){
+  player.island = island;
+  player.marker.setLatLng(island.coords);
 
   if(player.name === "Thief") checkTreasure();
 
@@ -244,7 +251,7 @@ function checkTreasure(){
 function checkCatch(){
   police.forEach(p=>{
     if(p.island === thief.island){
-      message.innerHTML = "Police caught the thief!";
+      message.innerHTML = "Police wins!";
       stopGame();
     }
   });
@@ -255,9 +262,7 @@ function nextTurn(){
   turnInfo.innerHTML = `${turn}'s turn`;
 
   if(turn === 'thief'){
-    const dice = 2; // preview range (or last roll)
-    const validMoves = getReachableIslands(thief.island, dice);
-    highlightMoves(validMoves);
+    highlightMoves(getReachableIslands(thief.island, 2));
   }
 }
 
@@ -265,12 +270,11 @@ function stopGame(){
   clearInterval(policeInterval);
 }
 
-// ================= ISLAND CLICK =================
+// ================= CLICK =================
 function handleIslandClick(island){
   if(turn !== 'thief') return;
 
   if(thief.skipTurn){
-    message.innerHTML = "Thief skips turn!";
     thief.skipTurn = false;
     nextTurn();
     return;
@@ -279,73 +283,27 @@ function handleIslandClick(island){
   maybeDrawEvent();
 
   let dice = rollDice();
-  if(thief.doubleMove){ dice *= 2; thief.doubleMove = false; }
+  if(thief.doubleMove){
+    dice *= 2;
+    thief.doubleMove = false;
+  }
 
-  const validMoves = getReachableIslands(thief.island, dice);
+  const valid = getReachableIslands(thief.island, dice);
 
-  highlightMoves(validMoves); // 🔥 visual feedback
-
-  if(!validMoves.includes(island)){
-    message.innerHTML = `Invalid move (${dice} steps)`;
+  if(!valid.includes(island)){
+    message.innerHTML = "Invalid move";
     return;
   }
 
   movePlayer(thief, island);
-  message.innerHTML = `Moved to ${island.name} (dice: ${dice})`;
+  message.innerHTML = `Moved (${dice})`;
 }
 
-islands.forEach(island => {
-  const marker = L.marker(island.coords).addTo(map).bindPopup(island.name);
-
-  marker.on('click', () => {
-    if(turn !== 'thief') return;
-
-    if(thief.skipTurn){
-      thief.skipTurn = false;
-      nextTurn();
-      return;
-    }
-
-    maybeDrawEvent();
-
-    let dice = rollDice();
-    if(thief.doubleMove){ dice *= 2; thief.doubleMove = false; }
-
-    const validMoves = getReachableIslands(thief.island, dice);
-
-    if(!validMoves.includes(island)){
-      message.innerHTML = `Invalid move (${dice} steps max)`;
-      return;
-    }
-
-    movePlayer(thief, island);
-    message.innerHTML = `Moved to ${island.name} (dice: ${dice})`;
-  });
-});
-
 // ================= POLICE AI =================
-let policeSkipNext = false;
-let policeExtraMove = 0;
-
 function movePolice(){
   police.forEach(p=>{
-    let nearest = islands[0];
-    let minDist = map.distance(L.latLng(p.island.coords), L.latLng(thief.island.coords));
-
-    islands.forEach(i=>{
-      const d = map.distance(L.latLng(i.coords), L.latLng(thief.island.coords));
-      if(d < minDist){
-        nearest = i;
-        minDist = d;
-      }
-    });
-
-    movePlayer(p, nearest);
-
-    if(policeExtraMove > 0){
-      movePlayer(p, nearest);
-      policeExtraMove--;
-    }
+    let target = thief.island;
+    movePlayer(p, target);
   });
 }
 
