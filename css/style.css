@@ -25,3 +25,13 @@
   fill: #4CAF50 !important;
   radius: 12 !important;
 }
+
+/* Boat icons for players */
+.boat {
+  width: 32px;
+  height: 32px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  transform-origin: center;
+  transition: transform 0.4s linear, top 0.4s linear, left 0.4s linear;
+}
