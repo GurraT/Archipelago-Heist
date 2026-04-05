@@ -115,11 +115,23 @@ function showEventCard(event){
   cardType.innerText = `Type: ${event.type}`;
   cardEffect.innerText = getEventDescription(event.name);
 
+  // Add color class based on type
+  eventCardDiv.className = `event-card ${event.type.toLowerCase()}`;
+
+  // Set icon
+  cardIcon.src = cardIcons[event.type] || "";
+
   eventCardDiv.style.display = 'block';
 
   // Hide after 3 seconds
   setTimeout(()=>{ eventCardDiv.style.display = 'none'; }, 3000);
 }
+//card icons
+const cardIcons = {
+  "Thief": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Red_circle.png",
+  "Police": "https://upload.wikimedia.org/wikipedia/commons/2/29/Blue_circle.png",
+  "Both": "https://upload.wikimedia.org/wikipedia/commons/6/60/Yellow_circle.png"
+};
 
 // Optional: map card name to readable description
 function getEventDescription(name){
