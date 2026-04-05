@@ -24,3 +24,25 @@
 .event-card.thief { background-color: #f8d7da; border-color: #b22222; } /* red */
 .event-card.police { background-color: #d1ecf1; border-color: #007bff; } /* blue */
 .event-card.both { background-color: #fff3cd; border-color: #ffc107; } 
+
+#diceContainer {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+}
+
+#rollDiceBtn {
+  padding: 8px 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#diceResult {
+  margin-top: 5px;
+  font-size: 20px;
+  font-weight: bold;
+}
