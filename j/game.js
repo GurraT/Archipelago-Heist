@@ -18,7 +18,7 @@ let treasures = [islands[1], islands[2], islands[3]]; // Grinda, Sandhamn, Utö
 const treasureMarkers = [];
 
 // Players
-let thief = { name: "Thief", island: islands[0], treasures: 0, marker: null };
+let thief = { name: "Thief", island: islands[0], treasures: 0, marker: null, skipTurn:false, doubleMove:false };
 let police = [
   { name: "Police1", island: islands[2], marker: null },
   { name: "Police2", island: islands[4], marker: null }
@@ -50,7 +50,7 @@ treasures.forEach((t,i)=>{
   treasureMarkers.push(marker);
 });
 
-// Add Thief marker (initially visible)
+// Add Thief marker
 thief.marker = L.circleMarker(thief.island.coords, { color: 'red', radius: 10 }).addTo(map);
 
 // Add Police markers
@@ -58,19 +58,67 @@ police.forEach(p=>{
   p.marker = L.circleMarker(p.island.coords, { color: 'blue', radius: 10 }).addTo(map);
 });
 
-// Update visibility of Thief for stealth mode
+// Event deck
+const events = [
+  { name: "Storm", type:"Police", effect:()=>{ message.innerHTML="Storm! Thief loses next turn."; thief.skipTurn=true; } },
+  { name: "Secret Passage", type:"Thief", effect:()=>{ message.innerHTML="Secret passage! Thief moves double dice roll."; thief.doubleMove=true; } },
+  { name: "Treasure Bonus", type:"Thief", effect:()=>{ 
+      if(treasures.length>0){
+        const t = treasures[0]; 
+        treasures.splice(0,1); 
+        map.removeLayer(treasureMarkers[0]); 
+        treasureMarkers.splice(0,1);
+        thief.treasures += 1;
+        treasureCount.innerHTML = `Treasures collected: ${thief.treasures}`;
+        message.innerHTML = "Treasure Bonus! Thief collected an extra treasure!";
+      }
+    } 
+  },
+  { name: "Police Alert", type:"Police", effect:()=>{ 
+      message.innerHTML="Police Alert! Thief revealed for 5 seconds.";
+      thief.marker.setStyle({opacity:1});
+      setTimeout(()=>updateStealth(),5000);
+    } 
+  },
+  { name: "Favorable Winds", type:"Thief", effect:()=>{ message.innerHTML="Favorable winds! Thief moves +1 extra island."; thief.doubleMove=true; } },
+  { name: "Foggy Night", type:"Thief", effect:()=>{ message.innerHTML="Foggy night! Police skip next move."; policeSkipNext=true; } },
+  { name: "Island Patrol", type:"Police", effect:()=>{ message.innerHTML="Island Patrol! Police move toward nearest treasure."; policeMoveToTreasure(); } },
+  { name: "Hidden Cove", type:"Thief", effect:()=>{ message.innerHTML="Hidden Cove! Thief can hide this turn."; thief.skipReveal=true; } },
+  { name: "Radio Signal", type:"Police", effect:()=>{ message.innerHTML="Radio Signal! Thief location revealed."; thief.marker.setStyle({opacity:1}); setTimeout(()=>updateStealth(),5000); } },
+  { name: "Rough Seas", type:"Police", effect:()=>{ message.innerHTML="Rough Seas! Thief loses 1 movement point this turn."; thief.reduceMove=1; } },
+  { name: "Smuggler’s Shortcut", type:"Thief", effect:()=>{ message.innerHTML="Smuggler's Shortcut! Teleport to any island."; } }, // implement teleport in click
+  { name: "Reinforcements", type:"Police", effect:()=>{ message.innerHTML="Police reinforcements! +1 move for all police this turn."; policeExtraMove=1; } },
+  { name: "Treasure Map Leak", type:"Police", effect:()=>{ message.innerHTML="Treasure Map Leak! Police see a remaining treasure."; if(treasures.length>0) alert(`Treasure at ${treasures[0].name}`); } },
+  { name: "Hidden Cache", type:"Thief", effect:()=>{ message.innerHTML="Hidden Cache! Gain extra treasure if on treasure island."; checkTreasure(); } },
+  { name: "Sudden Storm", type:"Both", effect:()=>{ message.innerHTML="Sudden Storm! All next moves reduced by 1."; thief.reduceMove=1; policeExtraMove=0; } }
+];
+
+// Variables for police/future moves
+let policeSkipNext=false;
+let policeExtraMove=0;
+
+// Stealth update
 function updateStealth(){
-  let visible = false;
+  let visible=false;
   police.forEach(p=>{
     const dist = map.distance(L.latLng(p.island.coords), L.latLng(thief.island.coords));
-    if(dist<30000) visible = true; // police within ~30km
+    if(dist<30000) visible=true;
   });
-  thief.marker.setStyle({ opacity: visible?1:0 }); // hide if far
+  if(!thief.skipReveal) thief.marker.setStyle({opacity: visible?1:0});
+  thief.skipReveal=false;
+}
+
+// Draw random event (50% chance per Thief turn)
+function maybeDrawEvent(){
+  if(Math.random()<0.5){
+    const event = events[Math.floor(Math.random()*events.length)];
+    event.effect();
+  }
 }
 
 // Move player
-function movePlayer(player, targetIsland){
-  player.island = targetIsland;
+function movePlayer(player,targetIsland){
+  player.island=targetIsland;
   player.marker.setLatLng(targetIsland.coords);
   if(player.name==='Thief') checkTreasure();
   checkCatch();
@@ -90,125 +138,74 @@ function checkTreasure(){
       treasureCount.innerHTML = `Treasures collected: ${thief.treasures}`;
     }
   });
-  if(thief.treasures === 3){
-    message.innerHTML = "Thief wins! Escaped with all treasures!";
-    stopGame();
-  }
+  if(thief.treasures>=3){ message.innerHTML="Thief wins! Escaped with all treasures!"; stopGame(); }
 }
 
-// Check police catch
+// Check if caught
 function checkCatch(){
-  police.forEach(p=>{
-    if(p.island===thief.island){
-      message.innerHTML = `Police caught the Thief on ${p.island.name}! Police wins!`;
-      stopGame();
-    }
-  });
+  police.forEach(p=>{ if(p.island===thief.island){ message.innerHTML=`Police caught the Thief on ${p.island.name}! Police wins!`; stopGame(); } });
 }
 
 // Next turn
 function nextTurn(){
-  turn = (turn==='thief')?'police':'thief';
+  turn=(turn==='thief')?'police':'thief';
   turnInfo.innerHTML = turn.charAt(0).toUpperCase()+turn.slice(1)+"'s turn";
 }
 
-// Game stop
+// Stop game
 function stopGame(){
   clearInterval(policeInterval);
   map.off('click');
 }
 
-// Thief movement by clicking nearest island within dice range
-map.on('click', e=>{
+// Thief movement click handler
+map.on('click',e=>{
   if(turn!=='thief') return;
-  const dice = rollDice();
-  let nearest = islands[0];
-  let minDist = map.distance(e.latlng, L.latLng(nearest.coords));
+  if(thief.skipTurn){ message.innerHTML="Thief loses turn due to Storm."; thief.skipTurn=false; nextTurn(); return; }
+
+  maybeDrawEvent();
+
+  let dice=rollDice();
+  if(thief.doubleMove){ dice*=2; thief.doubleMove=false; }
+  if(thief.reduceMove){ dice=Math.max(1,dice-thief.reduceMove); thief.reduceMove=0; }
+
+  let nearest=islands[0]; let minDist=map.distance(e.latlng,L.latLng(nearest.coords));
   islands.forEach(i=>{
-    const d = map.distance(e.latlng, L.latLng(i.coords));
-    if(d<minDist) nearest=i;
+    const d = map.distance(e.latlng,L.latLng(i.coords));
+    if(d<minDist){ nearest=i; minDist=d; }
   });
-  const distToIsland = map.distance(L.latLng(thief.island.coords), L.latLng(nearest.coords));
-  if(distToIsland <= dice*30000){
-    movePlayer(thief, nearest);
-    message.innerHTML = `Thief rolled a ${dice} and moved to ${nearest.name}`;
-  } else {
-    message.innerHTML = `Thief rolled a ${dice}, but ${nearest.name} is too far.`;
-  }
+
+  const distToIsland = map.distance(L.latLng(thief.island.coords),L.latLng(nearest.coords));
+  if(distToIsland <= dice*30000){ movePlayer(thief,nearest); message.innerHTML+=` Thief rolled ${dice} and moved to ${nearest.name}`; }
+  else{ message.innerHTML+=` Thief rolled ${dice}, but ${nearest.name} is too far.`; }
 });
 
 // Police auto-move toward Thief
 function movePolice(){
   police.forEach(p=>{
-    let nearest = islands[0];
-    let minDist = map.distance(L.latLng(p.island.coords), L.latLng(thief.island.coords));
+    let nearest=islands[0]; let minDist=map.distance(L.latLng(p.island.coords),L.latLng(thief.island.coords));
     islands.forEach(i=>{
-      const d = map.distance(L.latLng(i.coords), L.latLng(thief.island.coords));
+      const d=map.distance(L.latLng(i.coords),L.latLng(thief.island.coords));
       if(d<minDist){ nearest=i; minDist=d; }
     });
-    movePlayer(p, nearest);
+    movePlayer(p,nearest);
+    // Extra move from reinforcement
+    if(policeExtraMove>0){ movePlayer(p,nearest); policeExtraMove--; }
   });
 }
 
 // Police turn every 3s
-const policeInterval = setInterval(()=>{
-  if(turn==='police') movePolice();
-},3000);
+const policeInterval=setInterval(()=>{ if(turn==='police'){ if(!policeSkipNext) movePolice(); else { policeSkipNext=false; message.innerHTML="Police lost turn due to Foggy Night!"; nextTurn(); } } },3000);
 
-// Event deck
-const events = [
-  { name: "Storm", effect: () => { message.innerHTML="Storm! Thief loses next turn."; thief.skipTurn = true; } },
-  { name: "Secret Passage", effect: () => { message.innerHTML="Secret passage! Thief moves double this turn."; thief.doubleMove = true; } },
-  { name: "Treasure Bonus", effect: () => { 
-      if(treasures.length>0){
-        const t = treasures[0]; 
-        treasures.splice(0,1); 
-        map.removeLayer(treasureMarkers[0]); 
-        treasureMarkers.splice(0,1);
-        thief.treasures += 1;
-        treasureCount.innerHTML = `Treasures collected: ${thief.treasures}`;
-        message.innerHTML = "Treasure Bonus! Thief collected an extra treasure!";
-      } 
-    } 
-  },
-  { name: "Police Alert", effect: () => {
-      message.innerHTML="Police Alert! Thief revealed for 5 seconds.";
-      thief.marker.setStyle({ opacity:1 });
-      setTimeout(()=>updateStealth(),5000);
-    } 
-  }
-];
-
-// Draw a random event (50% chance at start of Thief turn)
-function maybeDrawEvent(){
-  if(Math.random()<0.5){
-    const event = events[Math.floor(Math.random()*events.length)];
-    event.effect();
-  }
-}
-
-// Override Thief map click handler for events and double dice
-map.on('click', e=>{
-  if(turn!=='thief') return;
-  if(thief.skipTurn){ message.innerHTML="Thief loses this turn due to Storm!"; thief.skipTurn=false; nextTurn(); return; }
-
-  maybeDrawEvent(); // draw event before move
-
-  let dice = rollDice();
-  if(thief.doubleMove){ dice *= 2; thief.doubleMove=false; }
-
-  let nearest = islands[0];
-  let minDist = map.distance(e.latlng, L.latLng(nearest.coords));
-  islands.forEach(i=>{
-    const d = map.distance(e.latlng, L.latLng(i.coords));
-    if(d<minDist) nearest=i;
+// Helper: police move to nearest treasure
+function policeMoveToTreasure(){
+  police.forEach(p=>{
+    if(treasures.length===0) return;
+    let nearest=treasures[0]; let minDist=map.distance(L.latLng(p.island.coords),L.latLng(nearest.coords));
+    treasures.forEach(t=>{
+      const d=map.distance(L.latLng(p.island.coords),L.latLng(t.coords));
+      if(d<minDist){ nearest=t; minDist=d; }
+    });
+    movePlayer(p,nearest);
   });
-
-  const distToIsland = map.distance(L.latLng(thief.island.coords), L.latLng(nearest.coords));
-  if(distToIsland <= dice*30000){
-    movePlayer(thief, nearest);
-    message.innerHTML += ` Thief rolled a ${dice} and moved to ${nearest.name}`;
-  } else {
-    message.innerHTML += ` Thief rolled a ${dice}, but ${nearest.name} is too far.`;
-  }
-});
+}
