@@ -6,12 +6,31 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 // Islands
 const islands = [
-  { name: "Vaxholm", coords: [59.4007, 18.2876] },
-  { name: "Grinda", coords: [59.3671, 18.7112] },
-  { name: "Sandhamn", coords: [59.3204, 19.3428] },
-  { name: "Utö", coords: [58.9538, 18.5622] },
-  { name: "Fjäderholmarna", coords: [59.3225, 18.1502] }
+  { id: 0, name: "Vaxholm", coords: [59.4007, 18.2876], connections: [1,2] },
+  { id: 1, name: "Grinda", coords: [59.3671, 18.7112], connections: [0,3,4] },
+  { id: 2, name: "Fjäderholmarna", coords: [59.3225, 18.1502], connections: [0,5] },
+  { id: 3, name: "Sandhamn", coords: [59.3204, 19.3428], connections: [1,6,7] },
+  { id: 4, name: "Gällnö", coords: [59.403, 18.682], connections: [1,8] },
+  { id: 5, name: "Lidingö", coords: [59.366, 18.15], connections: [2,9] },
+  { id: 6, name: "Runmarö", coords: [59.283, 18.75], connections: [3,10] },
+  { id: 7, name: "Stavsnäs", coords: [59.283, 18.683], connections: [3,11] },
+  { id: 8, name: "Möja", coords: [59.416, 18.85], connections: [4,12] },
+  { id: 9, name: "Nacka", coords: [59.31, 18.2], connections: [5,13] },
+
+  // Continue pattern to ~50 islands
 ];
+
+islands.forEach(island => {
+  island.connections.forEach(connId => {
+    const target = islands.find(i => i.id === connId);
+
+    L.polyline([island.coords, target.coords], {
+      color: 'gray',
+      weight: 2,
+      dashArray: '5,5'
+    }).addTo(map);
+  });
+});
 
 // Treasure islands
 let treasures = [islands[1], islands[2], islands[3]]; // Grinda, Sandhamn, Utö
@@ -184,6 +203,12 @@ function movePlayer(player,targetIsland){
   nextTurn();
 }
 
+function getConnectedIslands(player){
+  return player.island.connections.map(id => 
+    islands.find(i => i.id === id)
+  );
+}
+
 
 // Check treasure
 function checkTreasure(){
@@ -216,13 +241,51 @@ function stopGame(){
   clearInterval(policeInterval);
   map.off('click');
 }
+islands.forEach(island => {
+  const marker = L.marker(island.coords).addTo(map)
+    .bindPopup(island.name);
 
+  marker.on('click', () => {
+    if(turn !== 'thief') return;
+
+    const validMoves = getConnectedIslands(thief);
+
+    const isValid = validMoves.includes(island);
+
+    if(!isValid){
+      message.innerHTML = "You can only move to connected islands!";
+      return;
+    }
+
+    movePlayer(thief, island);
+  });
+});
+
+function getReachableIslands(start, steps){
+  let visited = new Set();
+  let frontier = [start];
+
+  for(let i=0;i<steps;i++){
+    let next = [];
+    frontier.forEach(island=>{
+      island.connections.forEach(id=>{
+        const target = islands.find(i=>i.id===id);
+        if(!visited.has(target)){
+          visited.add(target);
+          next.push(target);
+        }
+      });
+    });
+    frontier = next;
+  }
+  return Array.from(visited);
+}
 // Thief movement click handler
-map.on('click',e=>{
-  if(turn!=='thief') return;
-  if(thief.skipTurn){ message.innerHTML="Thief loses turn due to Storm."; thief.skipTurn=false; nextTurn(); return; }
 
   maybeDrawEvent();
+
+const dice = rollDice();
+const validMoves = getReachableIslands(thief.island, dice);
 
   let dice=rollDice();
   if(thief.doubleMove){ dice*=2; thief.doubleMove=false; }
