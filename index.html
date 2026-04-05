@@ -1,32 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Thief vs Police – Archipelago</title>
+  <title>Thief & Police Board Game</title>
   <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style> 
-   <link rel="stylesheet" href="css/style.css"> 
-  </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 </head>
 <body>
-  <div id="diceContainer">
-  <button id="rollDiceBtn">🎲 Roll Dice</button>
-  <div id="diceResult">-</div>
-</div>
-  <h1>Thief vs Police – Stockholm Archipelago</h1>
-  <div class="info" id="turnInfo">Thief's turn</div>
   <div id="map"></div>
-  <div class="info" id="message"></div>
-  <div class="info" id="treasureCount">Treasures collected: 0</div>
 
-  <div id="eventCard" class="event-card" style="display:none;">
-  <h3 id="cardName"></h3>
-  <p id="cardType"></p>
-  <p id="cardEffect"></p>
-</div>
+  <div id="ui">
+    <button id="rollDice">Roll Dice</button>
+    <span id="diceResult">-</span>
+    <span id="turnInfo">Turn</span>
+    <span id="treasureCount">0</span>
+    <div id="message"></div>
+  </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <div id="eventCard">
+    <div id="cardName"></div>
+    <div id="cardType"></div>
+    <div id="cardEffect"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="j/game.js"></script>
 </body>
 </html>
