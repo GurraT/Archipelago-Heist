@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Thief vs Police – Archipelago</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 600px; width: 100%; margin: 20px 0; }
+    .info { font-family: sans-serif; margin: 10px 0; }
+    .treasure { width: 24px; height: 24px; }
+  </style>
+</head>
+<body>
+  <h1>Thief vs Police – Stockholm Archipelago</h1>
+  <div class="info" id="turnInfo">Thief's turn</div>
+  <div id="map"></div>
+  <div class="info" id="message"></div>
+  <div class="info" id="treasureCount">Treasures collected: 0</div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
