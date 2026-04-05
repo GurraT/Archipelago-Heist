@@ -93,6 +93,11 @@ const events = [
   { name: "Sudden Storm", type:"Both", effect:()=>{ message.innerHTML="Sudden Storm! All next moves reduced by 1."; thief.reduceMove=1; policeExtraMove=0; } }
 ];
 
+//cardelement
+const eventCardDiv = document.getElementById('eventCard');
+const cardName = document.getElementById('cardName');
+const cardType = document.getElementById('cardType');
+const cardEffect = document.getElementById('cardEffect');
 // Variables for police/future moves
 let policeSkipNext=false;
 let policeExtraMove=0;
@@ -125,6 +130,7 @@ function movePlayer(player,targetIsland){
   updateStealth();
   nextTurn();
 }
+
 
 // Check treasure
 function checkTreasure(){
