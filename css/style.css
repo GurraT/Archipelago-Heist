@@ -1,3 +1,7 @@
+    #map { height: 600px; width: 100%; margin: 20px 0; }
+    .info { font-family: sans-serif; margin: 10px 0; }
+    .treasure { width: 24px; height: 24px; }
+
 .event-card {
   position: absolute;
   top: 20px;
