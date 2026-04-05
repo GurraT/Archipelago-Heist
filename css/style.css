@@ -5,23 +5,20 @@ html, body {
 
 #map {
   width: 100%;
-  height: 100%; /* Full viewport height */
+  height: 80vh; /* Important! Without height, map is blank */
 }
 
 #ui {
   padding: 10px;
-  background: #f0e6d2;
-  font-weight: bold;
+  background: rgba(255,255,255,0.8);
 }
 
 #eventCard {
   display: none;
-  position: absolute;
-  top: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff4c2;
-  border: 2px solid #b08d57;
-  padding: 10px;
-  z-index: 1000;
+  background: #f8e5c1;
+  padding: 5px;
+  border: 2px solid #6B4226;
+  border-radius: 5px;
+  margin-top: 5px;
 }
+
