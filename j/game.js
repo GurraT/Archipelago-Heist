@@ -102,6 +102,47 @@ const cardEffect = document.getElementById('cardEffect');
 let policeSkipNext=false;
 let policeExtraMove=0;
 
+function maybeDrawEvent(){
+  if(Math.random()<0.5){ // 50% chance
+    const event = events[Math.floor(Math.random()*events.length)];
+    showEventCard(event);  // display visually
+    event.effect();        // apply effect
+  }
+}
+
+function showEventCard(event){
+  cardName.innerText = event.name;
+  cardType.innerText = `Type: ${event.type}`;
+  cardEffect.innerText = getEventDescription(event.name);
+
+  eventCardDiv.style.display = 'block';
+
+  // Hide after 3 seconds
+  setTimeout(()=>{ eventCardDiv.style.display = 'none'; }, 3000);
+}
+
+// Optional: map card name to readable description
+function getEventDescription(name){
+  switch(name){
+    case "Storm": return "Thief loses next turn due to rough weather.";
+    case "Secret Passage": return "Thief moves double dice roll this turn.";
+    case "Treasure Bonus": return "Thief instantly collects one treasure from any island.";
+    case "Police Alert": return "Thief revealed for 5 seconds.";
+    case "Favorable Winds": return "Thief moves +1 extra island.";
+    case "Foggy Night": return "Police skip next move due to poor visibility.";
+    case "Island Patrol": return "Police move toward nearest treasure.";
+    case "Hidden Cove": return "Thief can hide and remain invisible for one turn.";
+    case "Radio Signal": return "Police detect Thief location.";
+    case "Rough Seas": return "Thief loses one movement point this turn.";
+    case "Smuggler’s Shortcut": return "Thief teleports to any island.";
+    case "Reinforcements": return "Police get +1 move this turn.";
+    case "Treasure Map Leak": return "Police see a remaining treasure.";
+    case "Hidden Cache": return "Thief gains extra treasure if on a treasure island.";
+    case "Sudden Storm": return "All players’ next moves reduced by 1.";
+    default: return "";
+  }
+}
+
 // Stealth update
 function updateStealth(){
   let visible=false;
